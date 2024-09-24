@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Content Sync
  * Description: A plugin to sync content between WordPress installations using the WordPress REST API.
- * Version: 0.1
+ * Version: 1.0
  * Author: Vincent Design Inc.
  */
 
@@ -52,7 +52,7 @@ function contentSyncDisplayAdminPage() {
       ?>
 
       <table class="form-table">
-        <tr valign="top">
+        <tr>
           <th scope="row">Mode</th>
           <td>
             <select name="content_sync_mode">
@@ -61,14 +61,37 @@ function contentSyncDisplayAdminPage() {
             </select>
           </td>
         </tr>
+        <tr>
+          <th scope="row">Destination URL</th>
+          <td>
+            <input type="text" name="content_sync_destination_url" value="<?php echo esc_attr(get_option('content_sync_destination_url')); ?>" />
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Username</th>
+          <td>
+            <input type="text" name="content_sync_username" value="<?php echo esc_attr(get_option('content_sync_username')); ?>" />
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Application Password</th>
+          <td>
+            <input type="password" name="content_sync_app_password" value="<?php echo esc_attr(get_option('content_sync_app_password')); ?>" />
+          </td>
+        </tr>
       </table>
 
       <?php submit_button(); ?>
     </form>
   </div>
-<?php
+  <?php
 }
 
 add_action('admin_init', 'contentSyncRegisterSettings');
 
-function contentSyncRegisterSettings() { register_setting('content_sync_options', 'content_sync_mode'); }
+function contentSyncRegisterSettings() {
+  register_setting('content_sync_options', 'content_sync_mode');
+  register_setting('content_sync_options', 'content_sync_destination_url');
+  register_setting('content_sync_options', 'content_sync_username');
+  register_setting('content_sync_options', 'content_sync_app_password');
+}
