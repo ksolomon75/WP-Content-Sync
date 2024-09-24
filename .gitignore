@@ -1,0 +1,12 @@
+/node_modules
+/vendor
+/public
+.env
+.budfiles
+npm-debug.log
+yarn-error.log
+DOCKER_ENV
+Dockerfile-php-build
+.DS_Store
+._.DS_Store
+.editorconfig
