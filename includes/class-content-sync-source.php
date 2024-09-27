@@ -1,10 +1,12 @@
 <?php
+
 class ContentSyncSource {
   protected static $instance = null;
 
   public static function instance() {
-    if (null === self::$instance) { self::$instance = new self(); }
-
+    if (null === self::$instance) {
+      self::$instance = new self();
+    }
     return self::$instance;
   }
 
@@ -50,7 +52,7 @@ class ContentSyncSource {
           <tbody>
             <?php foreach ($posts as $post) : ?>
               <tr>
-                <td><input type="checkbox" name="selected_content[]" value="<?php echo esc_attr($post->ID); ?>" /></td>
+                <td><input type="checkbox" name="selected_content[]" value="<?php echo esc_attr($post->ID); ?>" class="select-content" /></td>
                 <td><?php echo esc_html($post->post_title); ?></td>
                 <td><?php echo esc_html($post->post_type); ?></td>
               </tr>
@@ -61,6 +63,14 @@ class ContentSyncSource {
         <?php submit_button('Sync Selected Content'); ?>
       </form>
     </div>
+    <script type="text/javascript">
+      document.getElementById('select-all').addEventListener('change', function() {
+        var checkboxes = document.querySelectorAll('.select-content');
+        checkboxes.forEach(function(checkbox) {
+          checkbox.checked = this.checked;
+        }, this);
+      });
+    </script>
     <?php
   }
 
