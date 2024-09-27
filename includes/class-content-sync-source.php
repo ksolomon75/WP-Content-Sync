@@ -26,13 +26,39 @@ class ContentSyncSource {
   }
 
   public function displayAdminPage() {
+    if (isset($_POST['sync_selected_content'])) {
+      $this->syncSelectedContent($_POST['selected_content']);
+    }
+
+    $posts = get_posts([
+      'post_type' => ['post', 'page'],
+      'numberposts' => -1,
+    ]);
     ?>
     <div class="wrap">
       <h1>Content Sync Source</h1>
       <form method="post">
         <?php wp_nonce_field('contentSyncSourceNonce', 'contentSyncSourceNonceField'); ?>
-        <input type="hidden" name="action" value="syncContent">
-        <?php submit_button('Sync Content'); ?>
+        <table class="widefat">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="select-all" /></th>
+              <th>Title</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($posts as $post) : ?>
+              <tr>
+                <td><input type="checkbox" name="selected_content[]" value="<?php echo esc_attr($post->ID); ?>" /></td>
+                <td><?php echo esc_html($post->post_title); ?></td>
+                <td><?php echo esc_html($post->post_type); ?></td>
+              </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+        <input type="hidden" name="sync_selected_content" value="1">
+        <?php submit_button('Sync Selected Content'); ?>
       </form>
     </div>
     <?php
@@ -49,14 +75,10 @@ class ContentSyncSource {
     }
   }
 
-  private function syncContent() {
-    $posts = get_posts([
-      'post_type' => ['post', 'page'],
-      'numberposts' => -1,
-    ]);
-
+  private function syncSelectedContent($selectedIds) {
     $data = [];
-    foreach ($posts as $post) {
+    foreach ($selectedIds as $postId) {
+      $post = get_post($postId);
       $data[] = [
         'postType' => $post->post_type,
         'postTitle' => $post->post_title,
@@ -65,19 +87,17 @@ class ContentSyncSource {
       ];
     }
 
+    error_log('Syncing selected content: ' . print_r($data, true));
+
     $destinationUrl = get_option('content_sync_destination_url');
-    $username       = get_option('content_sync_username');
-    $appPassword    = get_option('content_sync_app_password');
+    $username = get_option('content_sync_username');
+    $appPassword = get_option('content_sync_app_password');
 
-    $destinationUrl = $destinationUrl.'/wp-json/content-sync/v1/sync';
-    $auth           = $username.':'.$appPassword;
-    $auth64         = base64_encode($auth);
-
-    error_log('Syncing content: ' . print_r($data, true));
+    $destinationUrl = $destinationUrl . '/wp-json/content-sync/v1/sync';
 
     $response = wp_remote_post($destinationUrl, [
       'headers' => [
-        'Authorization' => 'Basic ' . $auth64, // Use Application Passwords
+        'Authorization' => 'Basic ' . base64_encode($username . ':' . $appPassword), // Use Application Passwords
         'Content-Type' => 'application/json',
       ],
       'body' => json_encode($data),
