@@ -49,9 +49,23 @@ class ContentSyncDestination {
         }
       }
 
+      $attachment_urls = [];
       foreach ($item['attachments'] as $attachment) {
-        $this->syncAttachment($attachment, $postId);
+        $new_attachment_id = $this->syncAttachment($attachment, $postId);
+        if (!is_wp_error($new_attachment_id)) {
+          $attachment_urls[$attachment['url']] = wp_get_attachment_url($new_attachment_id);
+        }
       }
+
+      // Update post content with new attachment URLs
+      $post_content = $item['postContent'];
+      foreach ($attachment_urls as $old_url => $new_url) {
+        $post_content = str_replace($old_url, $new_url, $post_content);
+      }
+      wp_update_post([
+        'ID' => $postId,
+        'post_content' => $post_content,
+      ]);
     }
 
     error_log('Content synced successfully.');
@@ -66,7 +80,7 @@ class ContentSyncDestination {
 
     if (is_wp_error($file_array['tmp_name'])) {
       error_log('Error downloading attachment: ' . $file_array['tmp_name']->get_error_message());
-      return;
+      return $file_array['tmp_name'];
     }
 
     $attachment_id = media_handle_sideload($file_array, $postId, $attachment['title'], [
@@ -77,10 +91,12 @@ class ContentSyncDestination {
 
     if (is_wp_error($attachment_id)) {
       error_log('Error uploading attachment: ' . $attachment_id->get_error_message());
-      return;
+      return $attachment_id;
     }
 
     update_post_meta($attachment_id, '_wp_attachment_image_alt', $attachment['alt']);
+
+    return $attachment_id;
   }
 
   private function validateJsonData($data) {
