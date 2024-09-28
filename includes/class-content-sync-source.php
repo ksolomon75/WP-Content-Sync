@@ -92,11 +92,26 @@ class ContentSyncSource {
     $data = [];
     foreach ($selectedIds as $postId) {
       $post = get_post($postId);
+      $attachments = get_attached_media('image', $postId);
+      $attachment_data = [];
+
+      foreach ($attachments as $attachment) {
+        $attachment_data[] = [
+          'id' => $attachment->ID,
+          'url' => wp_get_attachment_url($attachment->ID),
+          'title' => $attachment->post_title,
+          'description' => $attachment->post_content,
+          'caption' => $attachment->post_excerpt,
+          'alt' => get_post_meta($attachment->ID, '_wp_attachment_image_alt', true),
+        ];
+      }
+
       $data[] = [
         'postType' => $post->post_type,
         'postTitle' => $post->post_title,
         'postContent' => $post->post_content,
         'postMeta' => get_post_meta($post->ID),
+        'attachments' => $attachment_data,
       ];
     }
 
