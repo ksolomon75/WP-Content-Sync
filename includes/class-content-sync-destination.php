@@ -8,6 +8,12 @@ class ContentSyncDestination {
   protected $syncSuccess = false;
   protected $syncError = false;
 
+  /**
+   * Retrieves the single instance of the class.
+   *
+   * @return ContentSyncDestination The single instance of the class.
+   * @since 1.0
+   */
   public static function instance() {
     if (null === self::$instance) {
       self::$instance = new self();
@@ -15,6 +21,17 @@ class ContentSyncDestination {
     return self::$instance;
   }
 
+  /**
+   * Class constructor.
+   *
+   * Hooks into the `rest_api_init`, `admin_menu`, `admin_init`, and `admin_notices` actions to add the Content Sync Destination
+   * settings page, register the REST API routes, handle the form submission for syncing content, and display a success or error notice.
+   *
+   * Additionally, if the `content_sync_allow_local_sync` option is enabled, the `allowLocalSync` filter is added to the `http_request_host_is_external` filter
+   * to allow the API to make requests to the same host.
+   *
+   * @since 1.0
+   */
   private function __construct() {
     add_action('rest_api_init', [$this, 'registerRoutes']);
     add_action('admin_menu', [$this, 'addAdminMenu']);
@@ -27,6 +44,20 @@ class ContentSyncDestination {
     }
   }
 
+  /**
+   * Registers the REST API route for syncing content.
+   *
+   * The route is `/wp-json/content-sync/v1/sync` and accepts a POST request with a JSON payload
+   * containing the content to be synced.
+   *
+   * The `syncContent` method is called when the route is accessed, and is responsible for validating
+   * the JSON payload and creating the content on the site.
+   *
+   * The `permission_callback` is used to restrict access to the route to only users who have the
+   * `manage_options` capability.
+   *
+   * @since 1.0
+   */
   public function registerRoutes() {
     register_rest_route('content-sync/v1', '/sync', [
       'methods' => 'POST',
@@ -37,6 +68,30 @@ class ContentSyncDestination {
     ]);
   }
 
+  /**
+   * Handles the sync request and performs the actual content sync.
+   *
+   * This method is called when the `/wp-json/content-sync/v1/sync` route is accessed.
+   *
+   * The method expects a JSON payload containing the content to be synced,
+   * which is validated using the `validateJsonData` method.
+   *
+   * The method then iterates over the validated data and creates the content on the site
+   * using the `wp_insert_post` and `add_post_meta` functions.
+   *
+   * The method also syncs the attachments for each post using the `syncAttachment` method.
+   *
+   * If the sync is successful, the method returns a 200 response with a message indicating
+   * that the content was synced successfully.
+   *
+   * If the sync fails, the method returns a 400 response with an error message.
+   *
+   * @since 1.0
+   *
+   * @param WP_REST_Request $request The request object containing the JSON payload.
+   *
+   * @return WP_REST_Response The response object containing the result of the sync.
+   */
   public function syncContent(WP_REST_Request $request) {
     $data = $request->get_json_params();
 
@@ -85,6 +140,18 @@ class ContentSyncDestination {
     return new WP_REST_Response(['message' => 'Content synced successfully'], 200);
   }
 
+  /**
+   * Syncs a single attachment from the source site to the destination site.
+   *
+   * Downloads the attachment from the source site, and then uploads it to the destination site.
+   * Sets the title, description, and caption of the attachment based on the data from the source site.
+   * Sets the alt text of the attachment based on the data from the source site.
+   *
+   * @param array $attachment The data from the source site for the attachment.
+   * @param int $postId The ID of the post the attachment is associated with.
+   *
+   * @return int|WP_Error The ID of the new attachment, or a WP_Error on failure.
+   */
   private function syncAttachment($attachment, $postId) {
     $url = esc_url_raw($attachment['url']);
     error_log('Downloading attachment from URL: ' . $url);
@@ -115,6 +182,16 @@ class ContentSyncDestination {
     return $attachment_id;
   }
 
+  /**
+   * Downloads a file from the given URL and saves it to the uploads directory.
+   *
+   * If the download fails, the method returns a WP_Error object.
+   * If the copy fails, the method returns a WP_Error object.
+   *
+   * @param string $url The URL of the file to download.
+   *
+   * @return string|WP_Error The path to the downloaded file, or a WP_Error on failure.
+   */
   private function downloadURL($url) {
     $upload_dir = wp_upload_dir();
     $temp_file = download_url($url);
@@ -135,6 +212,17 @@ class ContentSyncDestination {
     return $file_path;
   }
 
+  /**
+   * Validates the given JSON data to make sure it has the required structure.
+   *
+   * The required structure is an array of objects, each containing the following properties:
+   * - postType: The post type of the content to be synced.
+   * - postTitle: The title of the content to be synced.
+   * - postContent: The content of the content to be synced.
+   *
+   * @param array $data The JSON data to be validated.
+   * @return boolean True if the data is valid, false otherwise.
+   */
   private function validateJsonData($data) {
     foreach ($data as $item) {
       if (!isset($item['postType']) || !isset($item['postTitle']) || !isset($item['postContent'])) {
@@ -144,6 +232,13 @@ class ContentSyncDestination {
     return true;
   }
 
+  /**
+   * Adds the Content Sync settings page to the WordPress admin menu.
+   *
+   * Adds a link to the Content Sync settings page to the Settings menu.
+   *
+   * @since 1.0
+   */
   public function addAdminMenu() {
     add_options_page(
       'Content Sync Settings',
@@ -154,6 +249,13 @@ class ContentSyncDestination {
     );
   }
 
+  /**
+   * Displays the Content Sync settings page.
+   *
+   * Shows a form with a single checkbox to enable syncing from local or test sites.
+   *
+   * @since 1.0
+   */
   public function displayAdminPage() {
     ?>
     <div class="wrap">
@@ -178,10 +280,25 @@ class ContentSyncDestination {
     <?php
   }
 
+  /**
+   * Registers the Content Sync settings.
+   *
+   * @since 1.0
+   */
   public function registerSettings() {
     register_setting('content_sync_options', 'content_sync_allow_local_sync');
   }
 
+  /**
+   * Checks if the given host is a local or test site, and if so, returns true.
+   *
+   * @since 1.0
+   *
+   * @param bool  $is   The current value of the allow local sync setting.
+   * @param mixed $host The host to check.
+   *
+   * @return bool The updated value of the allow local sync setting.
+   */
   public function allowLocalSync($is, $host) {
     if (strpos($host, '.test') !== false || strpos($host, '.local') !== false) {
       $is = true;
@@ -189,6 +306,14 @@ class ContentSyncDestination {
     return $is;
   }
 
+  /**
+   * Show admin notices after a sync request.
+   *
+   * Shows a success notice if the sync was successful, or an error notice if
+   * there was an error.
+   *
+   * @since 1.0
+   */
   public function showNotices() {
     if ($this->syncSuccess) {
       ?>

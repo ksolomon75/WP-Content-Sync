@@ -17,6 +17,14 @@ require_once CONTENT_SYNC_PATH . 'includes/class-content-sync-destination.php';
 // Initialize the plugin
 add_action('plugins_loaded', 'contentSyncInit');
 
+/**
+ * Initialize the Content Sync plugin.
+ *
+ * Checks the 'content_sync_mode' option to determine whether to load the source or
+ * destination class.
+ *
+ * @since 1.0
+ */
 function contentSyncInit() {
   $mode = get_option('content_sync_mode', 'source'); // Default to 'source'
 
@@ -30,6 +38,11 @@ function contentSyncInit() {
 // Add settings page to switch between source and destination
 add_action('admin_menu', 'contentSyncAddAdminMenu');
 
+/**
+ * Adds the Content Sync settings page to the WordPress admin menu.
+ *
+ * @since 1.0
+ */
 function contentSyncAddAdminMenu() {
   add_options_page(
     'Content Sync Settings',
@@ -40,6 +53,11 @@ function contentSyncAddAdminMenu() {
   );
 }
 
+/**
+ * Displays the Content Sync settings page.
+ *
+ * @since 1.0
+ */
 function contentSyncDisplayAdminPage() {
 ?>
   <div class="wrap">
@@ -89,6 +107,11 @@ function contentSyncDisplayAdminPage() {
 
 add_action('admin_init', 'contentSyncRegisterSettings');
 
+/**
+ * Registers the settings for the Content Sync plugin.
+ *
+ * @since 1.0
+ */
 function contentSyncRegisterSettings() {
   register_setting('content_sync_options', 'content_sync_mode');
   register_setting('content_sync_options', 'content_sync_destination_url');
