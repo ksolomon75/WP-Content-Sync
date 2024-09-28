@@ -30,6 +30,11 @@ function contentSyncInit() {
 // Add settings page to switch between source and destination
 add_action('admin_menu', 'contentSyncAddAdminMenu');
 
+/**
+ * Adds the Content Sync settings page to the WordPress admin menu.
+ *
+ * @since 1.0
+ */
 function contentSyncAddAdminMenu() {
   add_options_page(
     'Content Sync Settings',
@@ -40,6 +45,11 @@ function contentSyncAddAdminMenu() {
   );
 }
 
+/**
+ * Displays the Content Sync settings page.
+ *
+ * @since 1.0
+ */
 function contentSyncDisplayAdminPage() {
 ?>
   <div class="wrap">
@@ -89,6 +99,11 @@ function contentSyncDisplayAdminPage() {
 
 add_action('admin_init', 'contentSyncRegisterSettings');
 
+/**
+ * Registers the settings for the Content Sync plugin.
+ *
+ * @since 1.0
+ */
 function contentSyncRegisterSettings() {
   register_setting('content_sync_options', 'content_sync_mode');
   register_setting('content_sync_options', 'content_sync_destination_url');
