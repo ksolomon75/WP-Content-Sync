@@ -19,10 +19,10 @@ class ContentSyncSource {
   }
 
   /**
-   * Private constructor to prevent instantiation.
+   * Class constructor.
    *
-   * Hooks into the necessary actions to render the settings page and handle the
-   * sync request.
+   * Hooks into the `admin_menu` and `admin_init` actions to add the Content Sync Source
+   * settings page and handle the sync request.
    *
    * @since 1.0
    */
@@ -33,7 +33,7 @@ class ContentSyncSource {
   }
 
   /**
-   * Adds the Content Sync Source page to the WordPress admin menu.
+   * Adds the Content Sync Source settings page to the WordPress admin menu.
    *
    * @since 1.0
    */
@@ -50,11 +50,10 @@ class ContentSyncSource {
   }
 
   /**
-   * Renders the Content Sync Source page in the WordPress admin area.
+   * Displays the Content Sync Source settings page.
    *
-   * Displays a table of all posts and pages with checkboxes to select which
-   * content to sync. Also handles the sync request and shows success or error
-   * notices.
+   * Handles the form submission for syncing selected content, and displays a list of all posts and pages
+   * with checkboxes for selecting which content to sync.
    *
    * @since 1.0
    */
@@ -106,11 +105,10 @@ class ContentSyncSource {
   }
 
   /**
-   * Handles the sync request and syncs the content if the nonce is valid.
+   * Handles the sync request and performs the actual content sync.
    *
-   * Checks if the nonce is valid and if the action is to sync the content. If
-   * the nonce is invalid, sets the syncError flag to true and returns. If the
-   * nonce is valid, calls the syncContent method to sync the content.
+   * Checks to make sure the request is valid and that the nonce is correct.
+   * If the request is valid, calls the syncContent method to perform the sync.
    *
    * @since 1.0
    */
@@ -128,23 +126,38 @@ class ContentSyncSource {
   /**
    * Syncs the selected content to the destination site.
    *
-   * Loops over the selected IDs and fetches the post data. Then, sends a POST
-   * request to the destination site with the post data. Logs the response code
-   * and body, and sets the syncSuccess or syncError flags accordingly.
-   *
-   * @param array $selectedIds The IDs of the selected posts to sync.
+   * Given an array of post IDs, this function will retrieve the content and
+   * attachments for each post and send them to the destination site to be
+   * imported.
    *
    * @since 1.0
+   *
+   * @param array $selectedIds The IDs of the posts to be synced.
    */
   private function syncSelectedContent($selectedIds) {
     $data = [];
     foreach ($selectedIds as $postId) {
       $post = get_post($postId);
+      $attachments = get_attached_media('image', $postId);
+      $attachment_data = [];
+
+      foreach ($attachments as $attachment) {
+        $attachment_data[] = [
+          'id' => $attachment->ID,
+          'url' => wp_get_attachment_url($attachment->ID),
+          'title' => $attachment->post_title,
+          'description' => $attachment->post_content,
+          'caption' => $attachment->post_excerpt,
+          'alt' => get_post_meta($attachment->ID, '_wp_attachment_image_alt', true),
+        ];
+      }
+
       $data[] = [
         'postType' => $post->post_type,
         'postTitle' => $post->post_title,
         'postContent' => $post->post_content,
         'postMeta' => get_post_meta($post->ID),
+        'attachments' => $attachment_data,
       ];
     }
 
@@ -184,9 +197,10 @@ class ContentSyncSource {
   }
 
   /**
-   * Displays admin notices based on the sync status.
+   * Show admin notices after a sync request.
    *
-   * @since 1.0
+   * Shows a success notice if the sync was successful, or an error notice if
+   * there was an error.
    */
   public function showNotices() {
     if ($this->syncSuccess) {

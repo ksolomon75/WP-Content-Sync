@@ -21,6 +21,14 @@ require_once CONTENT_SYNC_PATH . 'includes/class-content-sync-destination.php';
 // Initialize the plugin
 add_action('plugins_loaded', 'contentSyncInit');
 
+/**
+ * Initialize the Content Sync plugin.
+ *
+ * Checks the 'content_sync_mode' option to determine whether to load the source or
+ * destination class.
+ *
+ * @since 1.0
+ */
 function contentSyncInit() {
   $mode = get_option('content_sync_mode', 'source'); // Default to 'source'
 
