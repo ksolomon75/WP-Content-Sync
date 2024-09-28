@@ -2,8 +2,8 @@
 
 class ContentSyncSource {
   protected static $instance = null;
-  protected $syncSuccess = false;
-  protected $syncError = false;
+  protected $sync_success = false;
+  protected $sync_error = false;
 
   public static function instance() {
     if (null === self::$instance) {
@@ -80,7 +80,7 @@ class ContentSyncSource {
   public function handleSyncRequest() {
     if (isset($_POST['action']) && $_POST['action'] === 'syncContent') {
       if (!isset($_POST['contentSyncSourceNonceField']) || !wp_verify_nonce($_POST['contentSyncSourceNonceField'], 'contentSyncSourceNonce')) {
-        $this->syncError = true;
+        $this->sync_error = true;
         return;
       }
 
@@ -133,7 +133,7 @@ class ContentSyncSource {
 
     if (is_wp_error($response)) {
       error_log('Sync request failed: ' . $response->get_error_message());
-      $this->syncError = true;
+      $this->sync_error = true;
     } else {
       $response_code = wp_remote_retrieve_response_code($response);
       $response_body = wp_remote_retrieve_body($response);
@@ -142,31 +142,31 @@ class ContentSyncSource {
       error_log('Sync request response body: ' . $response_body);
 
       if ($response_code === 200) {
-        $this->syncSuccess = true;
+        $this->sync_success = true;
       } else {
         error_log('Sync request failed with response code: ' . $response_code);
-        $this->syncError = true;
+        $this->sync_error = true;
       }
     }
   }
 
   public function showNotices() {
-    if ($this->syncSuccess) {
+    if ($this->sync_success) {
       ?>
       <div class="notice notice-success is-dismissible">
         <p>Content successfully synced!</p>
       </div>
       <?php
-      $this->syncSuccess = false; // Reset the flag
+      $this->sync_success = false; // Reset the flag
     }
 
-    if ($this->syncError) {
+    if ($this->sync_error) {
       ?>
       <div class="notice notice-error is-dismissible">
         <p>There was an error syncing the content. Please try again.</p>
       </div>
       <?php
-      $this->syncError = false; // Reset the flag
+      $this->sync_error = false; // Reset the flag
     }
   }
 }
