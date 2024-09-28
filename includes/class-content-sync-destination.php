@@ -1,7 +1,12 @@
 <?php
+require_once ABSPATH . "wp-admin" . '/includes/image.php';
+require_once ABSPATH . "wp-admin" . '/includes/file.php';
+require_once ABSPATH . "wp-admin" . '/includes/media.php';
 
 class ContentSyncDestination {
   protected static $instance = null;
+  protected $syncSuccess = false;
+  protected $syncError = false;
 
   public static function instance() {
     if (null === self::$instance) {
@@ -12,6 +17,14 @@ class ContentSyncDestination {
 
   private function __construct() {
     add_action('rest_api_init', [$this, 'registerRoutes']);
+    add_action('admin_menu', [$this, 'addAdminMenu']);
+    add_action('admin_init', [$this, 'registerSettings']);
+    add_action('admin_notices', [$this, 'showNotices']);
+
+    // Apply the filter if the option is enabled
+    if (get_option('content_sync_allow_local_sync', false)) {
+      add_filter('http_request_host_is_external', [$this, 'allowLocalSync'], 10, 3);
+    }
   }
 
   public function registerRoutes() {
@@ -73,9 +86,12 @@ class ContentSyncDestination {
   }
 
   private function syncAttachment($attachment, $postId) {
+    $url = esc_url_raw($attachment['url']);
+    error_log('Downloading attachment from URL: ' . $url);
+
     $file_array = [
-      'name' => basename($attachment['url']),
-      'tmp_name' => download_url($attachment['url']),
+      'name' => basename($url),
+      'tmp_name' => $this->downloadURL($url),
     ];
 
     if (is_wp_error($file_array['tmp_name'])) {
@@ -99,6 +115,26 @@ class ContentSyncDestination {
     return $attachment_id;
   }
 
+  private function downloadURL($url) {
+    $upload_dir = wp_upload_dir();
+    $temp_file = download_url($url);
+
+    if (is_wp_error($temp_file)) {
+      return $temp_file;
+    }
+
+    $file_name = basename($url);
+    $file_path = $upload_dir['path'] . '/' . $file_name;
+
+    if (!copy($temp_file, $file_path)) {
+      unlink($temp_file);
+      return new WP_Error('copy_failed', 'Failed to copy the downloaded file.');
+    }
+
+    unlink($temp_file);
+    return $file_path;
+  }
+
   private function validateJsonData($data) {
     foreach ($data as $item) {
       if (!isset($item['postType']) || !isset($item['postTitle']) || !isset($item['postContent'])) {
@@ -106,5 +142,70 @@ class ContentSyncDestination {
       }
     }
     return true;
+  }
+
+  public function addAdminMenu() {
+    add_options_page(
+      'Content Sync Settings',
+      'Content Sync',
+      'manage_options',
+      'content-sync-settings',
+      [$this, 'displayAdminPage']
+    );
+  }
+
+  public function displayAdminPage() {
+    ?>
+    <div class="wrap">
+      <h1>Content Sync Settings</h1>
+      <form method="post" action="options.php">
+        <?php
+        settings_fields('content_sync_options');
+        do_settings_sections('content-sync-settings');
+        ?>
+        <table class="form-table">
+          <tr>
+            <th scope="row">Allow Local Sync</th>
+            <td>
+              <input type="checkbox" name="content_sync_allow_local_sync" value="1" <?php checked(get_option('content_sync_allow_local_sync'), 1); ?> />
+              <p class="description">Enable syncing from local or test sites.</p>
+            </td>
+          </tr>
+        </table>
+        <?php submit_button(); ?>
+      </form>
+    </div>
+    <?php
+  }
+
+  public function registerSettings() {
+    register_setting('content_sync_options', 'content_sync_allow_local_sync');
+  }
+
+  public function allowLocalSync($is, $host) {
+    if (strpos($host, '.test') !== false || strpos($host, '.local') !== false) {
+      $is = true;
+    }
+    return $is;
+  }
+
+  public function showNotices() {
+    if ($this->syncSuccess) {
+      ?>
+      <div class="notice notice-success is-dismissible">
+        <p>Content successfully synced!</p>
+      </div>
+      <?php
+      $this->syncSuccess = false; // Reset the flag
+    }
+
+    if ($this->syncError) {
+      ?>
+      <div class="notice notice-error is-dismissible">
+        <p>There was an error syncing the content. Please try again.</p>
+      </div>
+      <?php
+      $this->syncError = false; // Reset the flag
+    }
   }
 }
