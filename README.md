@@ -25,19 +25,19 @@ A plugin to sync content between WordPress installations using the WordPress RES
 
 ## Changelog
 
-### Version 1.0
+### Version 0.1
 
 - Initial release.
 
-### Version 1.1
+### Version 0.2
 
 - Fixed bug with saving settings.
 
-### Version 1.2
+### Version 0.3
 
 - Improved error handling.
 - Added support for selective syncing.
 
-### Version 1.3
+### Version 0.4
 
 - Added support for importing media files.
