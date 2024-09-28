@@ -11,9 +11,8 @@ A plugin to sync content between WordPress installations using the WordPress RES
 
 ## Installation
 
-1. Download the plugin.
-2. Upload the zip to both sites.
-3. Activate the plugin through the 'Plugins' menu on both sites.
+1. Download the [latest release](https://github.com/ksolomon75/WP-Content-Sync/releases/latest/download/WP-Content-Sync.zip) of the plugin.
+2. Upload and activate the plugin on both sites.
 
 ## Usage
 
