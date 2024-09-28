@@ -5,6 +5,12 @@ class ContentSyncSource {
   protected $syncSuccess = false;
   protected $syncError = false;
 
+  /**
+   * Retrieves the single instance of the class.
+   *
+   * @return ContentSyncSource The single instance of the class.
+   * @since 1.0
+   */
   public static function instance() {
     if (null === self::$instance) {
       self::$instance = new self();
@@ -12,12 +18,25 @@ class ContentSyncSource {
     return self::$instance;
   }
 
+  /**
+   * Private constructor to prevent instantiation.
+   *
+   * Hooks into the necessary actions to render the settings page and handle the
+   * sync request.
+   *
+   * @since 1.0
+   */
   private function __construct() {
     add_action('admin_menu', [$this, 'addAdminMenu']);
     add_action('admin_init', [$this, 'handleSyncRequest']);
     add_action('admin_notices', [$this, 'showNotices']);
   }
 
+  /**
+   * Adds the Content Sync Source page to the WordPress admin menu.
+   *
+   * @since 1.0
+   */
   public function addAdminMenu() {
     add_menu_page(
       'Content Sync Source',
@@ -30,6 +49,15 @@ class ContentSyncSource {
     );
   }
 
+  /**
+   * Renders the Content Sync Source page in the WordPress admin area.
+   *
+   * Displays a table of all posts and pages with checkboxes to select which
+   * content to sync. Also handles the sync request and shows success or error
+   * notices.
+   *
+   * @since 1.0
+   */
   public function displayAdminPage() {
     if (isset($_POST['sync_selected_content'])) {
       $this->syncSelectedContent($_POST['selected_content']);
@@ -77,6 +105,15 @@ class ContentSyncSource {
     <?php
   }
 
+  /**
+   * Handles the sync request and syncs the content if the nonce is valid.
+   *
+   * Checks if the nonce is valid and if the action is to sync the content. If
+   * the nonce is invalid, sets the syncError flag to true and returns. If the
+   * nonce is valid, calls the syncContent method to sync the content.
+   *
+   * @since 1.0
+   */
   public function handleSyncRequest() {
     if (isset($_POST['action']) && $_POST['action'] === 'syncContent') {
       if (!isset($_POST['contentSyncSourceNonceField']) || !wp_verify_nonce($_POST['contentSyncSourceNonceField'], 'contentSyncSourceNonce')) {
@@ -88,6 +125,17 @@ class ContentSyncSource {
     }
   }
 
+  /**
+   * Syncs the selected content to the destination site.
+   *
+   * Loops over the selected IDs and fetches the post data. Then, sends a POST
+   * request to the destination site with the post data. Logs the response code
+   * and body, and sets the syncSuccess or syncError flags accordingly.
+   *
+   * @param array $selectedIds The IDs of the selected posts to sync.
+   *
+   * @since 1.0
+   */
   private function syncSelectedContent($selectedIds) {
     $data = [];
     foreach ($selectedIds as $postId) {
@@ -135,6 +183,11 @@ class ContentSyncSource {
     }
   }
 
+  /**
+   * Displays admin notices based on the sync status.
+   *
+   * @since 1.0
+   */
   public function showNotices() {
     if ($this->syncSuccess) {
       ?>

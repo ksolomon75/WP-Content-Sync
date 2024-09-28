@@ -2,8 +2,12 @@
 /**
  * Plugin Name: Content Sync
  * Description: A plugin to sync content between WordPress installations using the WordPress REST API.
- * Version: 1.0
- * Author: Vincent Design Inc.
+ * Version: 0.4
+ * Author: Keith Solomon
+ * Author URI: https://keithsolomon.net
+ * Plugin URI: https://github.com/ksolomon75/content-sync
+ * License: GPLv2 or later
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
 
 if (!defined('ABSPATH')) { exit; } // Exit if accessed directly.
@@ -30,6 +34,11 @@ function contentSyncInit() {
 // Add settings page to switch between source and destination
 add_action('admin_menu', 'contentSyncAddAdminMenu');
 
+/**
+ * Adds the Content Sync settings page to the WordPress admin menu.
+ *
+ * @since 1.0
+ */
 function contentSyncAddAdminMenu() {
   add_options_page(
     'Content Sync Settings',
@@ -40,6 +49,11 @@ function contentSyncAddAdminMenu() {
   );
 }
 
+/**
+ * Displays the Content Sync settings page.
+ *
+ * @since 1.0
+ */
 function contentSyncDisplayAdminPage() {
 ?>
   <div class="wrap">
@@ -89,6 +103,11 @@ function contentSyncDisplayAdminPage() {
 
 add_action('admin_init', 'contentSyncRegisterSettings');
 
+/**
+ * Registers the settings for the Content Sync plugin.
+ *
+ * @since 1.0
+ */
 function contentSyncRegisterSettings() {
   register_setting('content_sync_options', 'content_sync_mode');
   register_setting('content_sync_options', 'content_sync_destination_url');
