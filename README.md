@@ -39,4 +39,4 @@ A plugin to sync content between WordPress installations using the WordPress RES
 
 ### Version 0.4
 
-- Added support for importing media files.
+- Initial support for importing media files.
