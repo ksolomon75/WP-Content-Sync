@@ -118,8 +118,9 @@ class ContentSyncSource {
    *
    * @param array $selectedIds The IDs of the posts to be synced.
    */
-  private function syncSelectedContent($selectedIds) {
+    private function syncSelectedContent($selectedIds) {
     $data = [];
+
     foreach ($selectedIds as $postId) {
       $post = get_post($postId);
       $attachments = get_attached_media('image', $postId);
@@ -136,11 +137,36 @@ class ContentSyncSource {
         ];
       }
 
+      // Get post categories
+      $categories = wp_get_post_categories($postId, ['fields' => 'names']);
+
+      // Get post tags
+      $tags = wp_get_post_tags($postId, ['fields' => 'names']);
+
+      // Get featured image info
+      $featured_image = [];
+      if (has_post_thumbnail($postId)) {
+        $thumbnail_id = get_post_thumbnail_id($postId);
+        $featured_image = [
+          'id' => $thumbnail_id,
+          'url' => wp_get_attachment_url($thumbnail_id),
+          'title' => get_the_title($thumbnail_id),
+          'alt' => get_post_meta($thumbnail_id, '_wp_attachment_image_alt', true),
+        ];
+      }
+
       $data[] = [
         'postType' => $post->post_type,
         'postTitle' => $post->post_title,
         'postContent' => $post->post_content,
+        'postDate' => $post->post_date,
+        'postModified' => $post->post_modified,
+        'postStatus' => $post->post_status,
+        'postExcerpt' => $post->post_excerpt,
+        'postCategories' => $categories,
+        'postTags' => $tags,
         'postMeta' => get_post_meta($post->ID),
+        'featuredImage' => $featured_image,
         'attachments' => $attachment_data,
       ];
     }

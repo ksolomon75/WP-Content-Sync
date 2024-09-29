@@ -106,12 +106,34 @@ class ContentSyncDestination {
         'post_type' => $item['postType'],
         'post_title' => sanitize_text_field($item['postTitle']),
         'post_content' => wp_kses_post($item['postContent']),
-        'post_status' => 'publish',
+        'post_date' => $item['postDate'],
+        'post_modified' => $item['postModified'],
+        'post_status' => $item['postStatus'],
+        'post_excerpt' => sanitize_text_field($item['postExcerpt']),
       ]);
 
+      // Set categories
+      if (!empty($item['postCategories'])) {
+        wp_set_post_categories($postId, $item['postCategories']);
+      }
+
+      // Set tags
+      if (!empty($item['postTags'])) {
+        wp_set_post_tags($postId, $item['postTags']);
+      }
+
+      // Set post meta
       foreach ($item['postMeta'] as $key => $values) {
         foreach ($values as $value) {
           add_post_meta($postId, sanitize_text_field($key), sanitize_text_field($value));
+        }
+      }
+
+      // Set featured image
+      if (!empty($item['featuredImage'])) {
+        $featured_image_id = $this->syncAttachment($item['featuredImage'], $postId);
+        if (!is_wp_error($featured_image_id)) {
+          set_post_thumbnail($postId, $featured_image_id);
         }
       }
 
@@ -223,7 +245,10 @@ class ContentSyncDestination {
    */
   private function validateJsonData($data) {
     foreach ($data as $item) {
-      if (!isset($item['postType']) || !isset($item['postTitle']) || !isset($item['postContent'])) {
+      if (!isset($item['postType']) || !isset($item['postTitle']) || !isset($item['postContent']) ||
+          !isset($item['postDate']) || !isset($item['postModified']) || !isset($item['postStatus']) ||
+          !isset($item['postExcerpt']) || !isset($item['postCategories']) || !isset($item['postTags']) ||
+          !isset($item['postMeta']) || !isset($item['featuredImage']) || !isset($item['attachments'])) {
         return false;
       }
     }
