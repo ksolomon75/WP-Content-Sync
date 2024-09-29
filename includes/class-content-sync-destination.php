@@ -114,6 +114,17 @@ class ContentSyncDestination {
     return new WP_REST_Response(['message' => 'Content synced successfully'], 200);
   }
 
+  /**
+   * Creates a new post or updates an existing post with the given data.
+   *
+   * Given an array of post data, this method will create a new post or update an existing post
+   * with the given post type, title, content, date, modified date, status, and excerpt.
+   *
+   * @since 1.0
+   *
+   * @param array $item The post data to use for creating the post.
+   * @return int The ID of the post that was created or updated.
+   */
   private function createPost($item) {
     return wp_insert_post([
       'post_type' => $item['postType'],
@@ -126,18 +137,40 @@ class ContentSyncDestination {
     ]);
   }
 
+  /**
+   * Sets the post categories for a post.
+   *
+   * @param int $postId The post ID to set the categories for.
+   * @param array $categories The categories to set. Should be an array of strings.
+   * @return void
+   */
   private function setPostCategories($postId, $categories) {
     if (!empty($categories)) {
       wp_set_post_categories($postId, $categories);
     }
   }
 
+  /**
+   * Sets the post tags for a post.
+   *
+   * @param int $postId The post ID to set the tags for.
+   * @param array $tags The tags to set. Should be an array of strings.
+   * @return void
+   */
   private function setPostTags($postId, $tags) {
     if (!empty($tags)) {
       wp_set_post_tags($postId, $tags);
     }
   }
 
+  /**
+   * Sets the post meta for a post.
+   *
+   * @param int $postId The post ID to set the meta for.
+   * @param array $meta The meta data to set. Should be an associative array with meta keys as the
+   *        keys and the values as arrays of strings.
+   * @return void
+   */
   private function setPostMeta($postId, $meta) {
     foreach ($meta as $key => $values) {
       foreach ($values as $value) {
@@ -146,15 +179,29 @@ class ContentSyncDestination {
     }
   }
 
+  /**
+   * Sets the featured image for a post.
+   *
+   * @param int $postId The post ID to set the featured image for.
+   * @param array $featuredImage The featured image data.
+   * @return void
+   */
   private function setFeaturedImage($postId, $featuredImage) {
     if (!empty($featuredImage)) {
-      $featured_image_id = $this->syncAttachment($featuredImage, $postId);
+      $featured_image_id = $this->syncAttachment($featuredImage, $postId, true);
       if (!is_wp_error($featured_image_id)) {
         set_post_thumbnail($postId, $featured_image_id);
       }
     }
   }
 
+  /**
+   * Replaces URLs of synced attachments in the post content with the new URLs.
+   *
+   * @param int $postId The ID of the post to update.
+   * @param string $postContent The post content to update.
+   * @param array $attachments The attachments to sync.
+   */
   private function updatePostContentWithAttachments($postId, $postContent, $attachments) {
     $attachment_urls = [];
     foreach ($attachments as $attachment) {
@@ -175,18 +222,25 @@ class ContentSyncDestination {
   }
 
   /**
-   * Syncs a single attachment from the source site to the destination site.
+   * Syncs an attachment to the destination site.
    *
-   * Downloads the attachment from the source site, and then uploads it to the destination site.
-   * Sets the title, description, and caption of the attachment based on the data from the source site.
-   * Sets the alt text of the attachment based on the data from the source site.
+   * Downloads an attachment from a URL and uploads it to the destination site.
+   * The attachment is associated with the given post ID.
    *
-   * @param array $attachment The data from the source site for the attachment.
-   * @param int $postId The ID of the post the attachment is associated with.
+   * If the attachment is a featured image, set the post_meta for the featured image.
    *
-   * @return int|WP_Error The ID of the new attachment, or a WP_Error on failure.
+   * If there is an error uploading the attachment, an error message is logged and the
+   * error object is returned.
+   *
+   * @since 1.0
+   *
+   * @param array  $attachment The attachment to be synced. Should contain the 'url', 'title', 'description', 'caption', and 'alt' keys.
+   * @param int    $postId     The ID of the post that the attachment will be associated with.
+   * @param bool   $feat       Whether the attachment is a featured image or not. Defaults to `false`.
+   *
+   * @return int|WP_Error The ID of the attachment on success, or a WP_Error object on failure.
    */
-  private function syncAttachment($attachment, $postId) {
+  private function syncAttachment($attachment, $postId, $feat=false) {
     $url = esc_url_raw($attachment['url']);
     error_log('Downloading attachment from URL: ' . $url);
 
@@ -195,16 +249,24 @@ class ContentSyncDestination {
       'tmp_name' => $this->downloadURL($url),
     ];
 
+    if ($feat) {
+      $attMeta =[
+        'post_title' => $attachment['title'],
+      ];
+    } else {
+      $attMeta = [
+        'post_title' => $attachment['title'],
+        'post_content' => $attachment['description'],
+        'post_excerpt' => $attachment['caption'],
+      ];
+    }
+
     if (is_wp_error($file_array['tmp_name'])) {
       error_log('Error downloading attachment: ' . $file_array['tmp_name']->get_error_message());
       return $file_array['tmp_name'];
     }
 
-    $attachment_id = media_handle_sideload($file_array, $postId, $attachment['title'], [
-      'post_title' => $attachment['title'],
-      'post_content' => $attachment['description'],
-      'post_excerpt' => $attachment['caption'],
-    ]);
+    $attachment_id = media_handle_sideload($file_array, $postId, $attachment['title'], $attMeta);
 
     if (is_wp_error($attachment_id)) {
       error_log('Error uploading attachment: ' . $attachment_id->get_error_message());
