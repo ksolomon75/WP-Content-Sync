@@ -34,8 +34,6 @@ class ContentSyncDestination {
    */
   private function __construct() {
     add_action('rest_api_init', [$this, 'registerRoutes']);
-    add_action('admin_menu', [$this, 'addAdminMenu']);
-    add_action('admin_init', [$this, 'registerSettings']);
     add_action('admin_notices', [$this, 'showNotices']);
 
     // Apply the filter if the option is enabled
@@ -230,65 +228,6 @@ class ContentSyncDestination {
       }
     }
     return true;
-  }
-
-  /**
-   * Adds the Content Sync settings page to the WordPress admin menu.
-   *
-   * Adds a link to the Content Sync settings page to the Settings menu.
-   *
-   * @since 1.0
-   */
-  public function addAdminMenu() {
-    add_menu_page(
-      'Content Sync Destination',
-      'Content Sync Destination',
-      'manage_options',
-      'content-sync-destination',
-      [$this, 'displayAdminPage'],
-      'dashicons-update',
-      6
-    );
-  }
-
-  /**
-   * Displays the Content Sync settings page.
-   *
-   * Shows a form with a single checkbox to enable syncing from local or test sites.
-   *
-   * @since 1.0
-   */
-  public function displayAdminPage() {
-    ?>
-    <div class="wrap">
-      <h1>Content Sync Destination Settings</h1>
-      <form method="post" action="options.php">
-        <?php
-        settings_fields('content_sync_options');
-        do_settings_sections('content-sync-destination');
-        ?>
-        <table class="form-table">
-          <tr>
-            <th scope="row">Allow Local Sync</th>
-            <td>
-              <input type="checkbox" name="content_sync_allow_local_sync" value="1" <?php checked(get_option('content_sync_allow_local_sync'), 1); ?> />
-              <p class="description">Enable syncing from local or test sites.</p>
-            </td>
-          </tr>
-        </table>
-        <?php submit_button(); ?>
-      </form>
-    </div>
-    <?php
-  }
-
-  /**
-   * Registers the Content Sync settings.
-   *
-   * @since 1.0
-   */
-  public function registerSettings() {
-    register_setting('content_sync_options', 'content_sync_allow_local_sync');
   }
 
   /**

@@ -9,8 +9,8 @@ function contentSyncRegisterSettings() {
   register_setting('content_sync_options', 'content_sync_destination_url');
   register_setting('content_sync_options', 'content_sync_username');
   register_setting('content_sync_options', 'content_sync_app_password');
+  register_setting('content_sync_options', 'content_sync_allow_local_sync');
 }
-
 
 /**
  * Displays the Content Sync settings page.
@@ -38,6 +38,13 @@ function contentSyncSettingsPage() {
               <option value="source" <?php selected(get_option('content_sync_mode'), 'source'); ?>>Source</option>
               <option value="destination" <?php selected(get_option('content_sync_mode'), 'destination'); ?>>Destination</option>
             </select>
+          </td>
+        </tr>
+        <tr id="local-sites">
+          <th scope="row">Allow Local/Test Sites</th>
+          <td>
+            <input type="checkbox" name="content_sync_allow_local_sync" value="1" <?php checked(1, get_option('content_sync_allow_local_sync'), true); ?> />
+            <label for="content_sync_allow_local_sync">Allow local/test sites to sync</label>
           </td>
         </tr>
       </table>
@@ -77,8 +84,10 @@ function contentSyncSettingsPage() {
         var mode = $('#content_sync_mode').val();
         if (mode === 'destination') {
           $('#destination-settings').hide();
+          $('#local-sites').show();
         } else {
           $('#destination-settings').show();
+          $('#local-sites').hide();
         }
       }
 
