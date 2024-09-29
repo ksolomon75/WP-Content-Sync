@@ -28,7 +28,6 @@ class ContentSyncSource {
    */
   private function __construct() {
     add_action('admin_menu', [$this, 'addAdminMenu']);
-    add_action('admin_init', [$this, 'handleSyncRequest']);
     add_action('admin_notices', [$this, 'showNotices']);
   }
 
@@ -102,25 +101,6 @@ class ContentSyncSource {
       });
     </script>
     <?php
-  }
-
-  /**
-   * Handles the sync request and performs the actual content sync.
-   *
-   * Checks to make sure the request is valid and that the nonce is correct.
-   * If the request is valid, calls the syncContent method to perform the sync.
-   *
-   * @since 1.0
-   */
-  public function handleSyncRequest() {
-    if (isset($_POST['action']) && $_POST['action'] === 'syncContent') {
-      if (!isset($_POST['contentSyncSourceNonceField']) || !wp_verify_nonce($_POST['contentSyncSourceNonceField'], 'contentSyncSourceNonce')) {
-        $this->syncError = true;
-        return;
-      }
-
-      $this->syncContent();
-    }
   }
 
   /**
