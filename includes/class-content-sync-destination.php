@@ -146,7 +146,21 @@ class ContentSyncDestination {
    */
   private function setPostCategories($postId, $categories) {
     if (!empty($categories)) {
-      wp_set_post_categories($postId, $categories);
+      $category_ids = [];
+
+      foreach ($categories as $category_name) {
+        $category = get_category_by_slug(sanitize_title($category_name));
+
+        if (!$category) {
+          $category_id = wp_create_category($category_name);
+        } else {
+          $category_id = $category->term_id;
+        }
+
+        $category_ids[] = $category_id;
+      }
+
+      wp_set_post_categories($postId, $category_ids);
     }
   }
 
@@ -159,7 +173,25 @@ class ContentSyncDestination {
    */
   private function setPostTags($postId, $tags) {
     if (!empty($tags)) {
-      wp_set_post_tags($postId, $tags);
+      foreach ($tags as $tag_name) {
+        $tag = get_term_by('name', $tag_name, 'post_tag');
+
+        if (!$tag) {
+          $tag = wp_insert_term($tag_name, 'post_tag');
+
+          if (is_wp_error($tag)) {
+            continue;
+          }
+
+          $tag_id = $tag['term_id'];
+        } else {
+          $tag_id = $tag->term_id;
+        }
+
+        $tag_ids[] = $tag_id;
+      }
+
+      wp_set_post_tags($postId, $tag_ids);
     }
   }
 
