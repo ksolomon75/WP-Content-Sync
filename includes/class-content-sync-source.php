@@ -38,13 +38,13 @@ class ContentSyncSource {
    */
   public function addAdminMenu() {
     add_menu_page(
-      'Content Sync Source',
-      'Content Sync Source',
+      'Sync Content',
+      'Sync Content',
       'manage_options',
       'content-sync-source',
       [$this, 'displayAdminPage'],
       'dashicons-update',
-      6
+      80
     );
   }
 
@@ -66,22 +66,24 @@ class ContentSyncSource {
       'numberposts' => -1,
     ]);
     ?>
+
     <div class="wrap">
-      <h1>Content Sync Source</h1>
+      <h1>Sync content to <a href="<?php echo get_option('content_sync_destination_url'); ?>"><?php echo get_option('content_sync_destination_url'); ?></a></h1>
+      <br>
       <form method="post">
         <?php wp_nonce_field('contentSyncSourceNonce', 'contentSyncSourceNonceField'); ?>
         <table class="widefat">
           <thead>
             <tr>
               <th><input type="checkbox" id="select-all" /></th>
-              <th>Title</th>
-              <th>Type</th>
+              <th><strong>Title</strong></th>
+              <th><strong>Type</strong></th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($posts as $post) : ?>
               <tr>
-                <td><input type="checkbox" name="selected_content[]" value="<?php echo esc_attr($post->ID); ?>" class="select-content" /></td>
+                <td style="padding-left: 1.1rem;"><input type="checkbox" name="selected_content[]" value="<?php echo esc_attr($post->ID); ?>" class="select-content" /></td>
                 <td><?php echo esc_html($post->post_title); ?></td>
                 <td><?php echo esc_html($post->post_type); ?></td>
               </tr>
