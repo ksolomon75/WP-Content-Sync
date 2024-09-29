@@ -22,9 +22,13 @@ A plugin to sync content between WordPress installations using the WordPress RES
 
 1. Go to the 'Settings' menu in the WordPress admin area.
 2. Select the 'Content Sync' option.
-3. Choose the 'Mode' for the plugin (source or destination).
+3. Choose the mode for the plugin (source or destination).
+   - Source mode: Sync content from your WordPress site to another WordPress site.
+   - Destination mode: Receive content from another WordPress site and import it into your site.
+     - If you are syncing custom post types, make sure they are set up on the destination site.
 4. Create an application password on the destination site.
 5. Configure the destination URL, username, and application password on source site.
+6. Go to the Sync Content admin page, select the items to sync, and click 'Sync Selected Content'.
 
 ## Changelog
 
