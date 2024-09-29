@@ -61,8 +61,10 @@ class ContentSyncSource {
       $this->syncSelectedContent($_POST['selected_content']);
     }
 
+    $postTypes = get_post_types(['public' => true]);
+
     $posts = get_posts([
-      'post_type' => ['post', 'page'],
+      'post_type' => $postTypes,
       'numberposts' => -1,
     ]);
     ?>
