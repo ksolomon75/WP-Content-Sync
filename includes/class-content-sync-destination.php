@@ -241,8 +241,8 @@ class ContentSyncDestination {
    */
   public function addAdminMenu() {
     add_options_page(
-      'Content Sync Settings',
-      'Content Sync',
+      'Content Sync Destination Settings',
+      'Content Sync Destination',
       'manage_options',
       'content-sync-destination',
       [$this, 'displayAdminPage']
@@ -259,7 +259,7 @@ class ContentSyncDestination {
   public function displayAdminPage() {
     ?>
     <div class="wrap">
-      <h1>Content Sync Settings</h1>
+      <h1>Content Sync Destination Settings</h1>
       <form method="post" action="options.php">
         <?php
         settings_fields('content_sync_options');
