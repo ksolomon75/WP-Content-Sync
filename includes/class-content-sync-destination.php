@@ -240,12 +240,14 @@ class ContentSyncDestination {
    * @since 1.0
    */
   public function addAdminMenu() {
-    add_options_page(
-      'Content Sync Destination Settings',
+    add_menu_page(
+      'Content Sync Destination',
       'Content Sync Destination',
       'manage_options',
       'content-sync-destination',
-      [$this, 'displayAdminPage']
+      [$this, 'displayAdminPage'],
+      'dashicons-update',
+      6
     );
   }
 
