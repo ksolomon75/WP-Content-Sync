@@ -44,7 +44,7 @@ class ContentSyncSource {
       'content-sync-source',
       [$this, 'displayAdminPage'],
       'dashicons-update',
-      6
+      80
     );
   }
 
