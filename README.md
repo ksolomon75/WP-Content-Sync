@@ -40,3 +40,7 @@ A plugin to sync content between WordPress installations using the WordPress RES
 ### Version 0.4
 
 - Initial support for importing media files.
+
+### Version 0.5
+
+- Consolidated settings and updated styling of content table
