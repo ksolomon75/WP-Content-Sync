@@ -8,9 +8,10 @@ A plugin to sync content between WordPress installations using the WordPress RES
   - Selective syncing
   - Media syncing
   - Syncing custom post types
-    > [!IMPORTANT]
-    > Any custom post types MUST already be set up on the destination site for this to work.
 - **Destination Mode**: Allows you to receive content from another WordPress site and import it into your site.
+
+> [!IMPORTANT]
+> Any custom post types MUST already be set up on the destination site for custom post type syncing to work.
 
 ## Installation
 
