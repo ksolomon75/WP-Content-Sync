@@ -102,62 +102,76 @@ class ContentSyncDestination {
     }
 
     foreach ($data as $item) {
-      $postId = wp_insert_post([
-        'post_type' => $item['postType'],
-        'post_title' => sanitize_text_field($item['postTitle']),
-        'post_content' => wp_kses_post($item['postContent']),
-        'post_date' => $item['postDate'],
-        'post_modified' => $item['postModified'],
-        'post_status' => $item['postStatus'],
-        'post_excerpt' => sanitize_text_field($item['postExcerpt']),
-      ]);
-
-      // Set categories
-      if (!empty($item['postCategories'])) {
-        wp_set_post_categories($postId, $item['postCategories']);
-      }
-
-      // Set tags
-      if (!empty($item['postTags'])) {
-        wp_set_post_tags($postId, $item['postTags']);
-      }
-
-      // Set post meta
-      foreach ($item['postMeta'] as $key => $values) {
-        foreach ($values as $value) {
-          add_post_meta($postId, sanitize_text_field($key), sanitize_text_field($value));
-        }
-      }
-
-      // Set featured image
-      if (!empty($item['featuredImage'])) {
-        $featured_image_id = $this->syncAttachment($item['featuredImage'], $postId);
-        if (!is_wp_error($featured_image_id)) {
-          set_post_thumbnail($postId, $featured_image_id);
-        }
-      }
-
-      $attachment_urls = [];
-      foreach ($item['attachments'] as $attachment) {
-        $new_attachment_id = $this->syncAttachment($attachment, $postId);
-        if (!is_wp_error($new_attachment_id)) {
-          $attachment_urls[$attachment['url']] = wp_get_attachment_url($new_attachment_id);
-        }
-      }
-
-      // Update post content with new attachment URLs
-      $post_content = $item['postContent'];
-      foreach ($attachment_urls as $old_url => $new_url) {
-        $post_content = str_replace($old_url, $new_url, $post_content);
-      }
-      wp_update_post([
-        'ID' => $postId,
-        'post_content' => $post_content,
-      ]);
+      $postId = $this->createPost($item);
+      $this->setPostCategories($postId, $item['postCategories']);
+      $this->setPostTags($postId, $item['postTags']);
+      $this->setPostMeta($postId, $item['postMeta']);
+      $this->setFeaturedImage($postId, $item['featuredImage']);
+      $this->updatePostContentWithAttachments($postId, $item['postContent'], $item['attachments']);
     }
 
     error_log('Content synced successfully.');
     return new WP_REST_Response(['message' => 'Content synced successfully'], 200);
+  }
+
+  private function createPost($item) {
+    return wp_insert_post([
+      'post_type' => $item['postType'],
+      'post_title' => sanitize_text_field($item['postTitle']),
+      'post_content' => wp_kses_post($item['postContent']),
+      'post_date' => $item['postDate'],
+      'post_modified' => $item['postModified'],
+      'post_status' => $item['postStatus'],
+      'post_excerpt' => sanitize_text_field($item['postExcerpt']),
+    ]);
+  }
+
+  private function setPostCategories($postId, $categories) {
+    if (!empty($categories)) {
+      wp_set_post_categories($postId, $categories);
+    }
+  }
+
+  private function setPostTags($postId, $tags) {
+    if (!empty($tags)) {
+      wp_set_post_tags($postId, $tags);
+    }
+  }
+
+  private function setPostMeta($postId, $meta) {
+    foreach ($meta as $key => $values) {
+      foreach ($values as $value) {
+        add_post_meta($postId, sanitize_text_field($key), sanitize_text_field($value));
+      }
+    }
+  }
+
+  private function setFeaturedImage($postId, $featuredImage) {
+    if (!empty($featuredImage)) {
+      $featured_image_id = $this->syncAttachment($featuredImage, $postId);
+      if (!is_wp_error($featured_image_id)) {
+        set_post_thumbnail($postId, $featured_image_id);
+      }
+    }
+  }
+
+  private function updatePostContentWithAttachments($postId, $postContent, $attachments) {
+    $attachment_urls = [];
+    foreach ($attachments as $attachment) {
+      $new_attachment_id = $this->syncAttachment($attachment, $postId);
+      if (!is_wp_error($new_attachment_id)) {
+        $attachment_urls[$attachment['url']] = wp_get_attachment_url($new_attachment_id);
+      }
+    }
+
+    foreach ($attachment_urls as $old_url => $new_url) {
+      $postContent = str_replace($old_url, $new_url, $postContent);
+    }
+
+    wp_update_post([
+      'ID' => $postId,
+      'post_content' => $postContent,
+    ]);
   }
 
   /**
