@@ -244,7 +244,7 @@ class ContentSyncDestination {
       'Content Sync Settings',
       'Content Sync',
       'manage_options',
-      'content-sync-settings',
+      'content-sync-destination',
       [$this, 'displayAdminPage']
     );
   }
@@ -263,7 +263,7 @@ class ContentSyncDestination {
       <form method="post" action="options.php">
         <?php
         settings_fields('content_sync_options');
-        do_settings_sections('content-sync-settings');
+        do_settings_sections('content-sync-destination');
         ?>
         <table class="form-table">
           <tr>
