@@ -5,6 +5,12 @@ class ContentSyncSource {
   protected $syncSuccess = false;
   protected $syncError = false;
 
+  /**
+   * Retrieves the single instance of the class.
+   *
+   * @return ContentSyncSource The single instance of the class.
+   * @since 1.0
+   */
   public static function instance() {
     if (null === self::$instance) {
       self::$instance = new self();
@@ -12,24 +18,44 @@ class ContentSyncSource {
     return self::$instance;
   }
 
+  /**
+   * Class constructor.
+   *
+   * Hooks into the `admin_menu` and `admin_init` actions to add the Content Sync Source
+   * settings page and handle the sync request.
+   *
+   * @since 1.0
+   */
   private function __construct() {
     add_action('admin_menu', [$this, 'addAdminMenu']);
-    add_action('admin_init', [$this, 'handleSyncRequest']);
     add_action('admin_notices', [$this, 'showNotices']);
   }
 
+  /**
+   * Adds the Content Sync Source settings page to the WordPress admin menu.
+   *
+   * @since 1.0
+   */
   public function addAdminMenu() {
     add_menu_page(
-      'Content Sync Source',
-      'Content Sync Source',
+      'Sync Content',
+      'Sync Content',
       'manage_options',
       'content-sync-source',
       [$this, 'displayAdminPage'],
       'dashicons-update',
-      6
+      80
     );
   }
 
+  /**
+   * Displays the Content Sync Source settings page.
+   *
+   * Handles the form submission for syncing selected content, and displays a list of all posts and pages
+   * with checkboxes for selecting which content to sync.
+   *
+   * @since 1.0
+   */
   public function displayAdminPage() {
     if (isset($_POST['sync_selected_content'])) {
       $this->syncSelectedContent($_POST['selected_content']);
@@ -40,22 +66,24 @@ class ContentSyncSource {
       'numberposts' => -1,
     ]);
     ?>
+
     <div class="wrap">
-      <h1>Content Sync Source</h1>
+      <h1>Sync content to <a href="<?php echo get_option('content_sync_destination_url'); ?>"><?php echo get_option('content_sync_destination_url'); ?></a></h1>
+      <br>
       <form method="post">
         <?php wp_nonce_field('contentSyncSourceNonce', 'contentSyncSourceNonceField'); ?>
         <table class="widefat">
           <thead>
             <tr>
               <th><input type="checkbox" id="select-all" /></th>
-              <th>Title</th>
-              <th>Type</th>
+              <th><strong>Title</strong></th>
+              <th><strong>Type</strong></th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($posts as $post) : ?>
               <tr>
-                <td><input type="checkbox" name="selected_content[]" value="<?php echo esc_attr($post->ID); ?>" class="select-content" /></td>
+                <td style="padding-left: 1.1rem;"><input type="checkbox" name="selected_content[]" value="<?php echo esc_attr($post->ID); ?>" class="select-content" /></td>
                 <td><?php echo esc_html($post->post_title); ?></td>
                 <td><?php echo esc_html($post->post_type); ?></td>
               </tr>
@@ -77,26 +105,41 @@ class ContentSyncSource {
     <?php
   }
 
-  public function handleSyncRequest() {
-    if (isset($_POST['action']) && $_POST['action'] === 'syncContent') {
-      if (!isset($_POST['contentSyncSourceNonceField']) || !wp_verify_nonce($_POST['contentSyncSourceNonceField'], 'contentSyncSourceNonce')) {
-        $this->syncError = true;
-        return;
-      }
-
-      $this->syncContent();
-    }
-  }
-
+  /**
+   * Syncs the selected content to the destination site.
+   *
+   * Given an array of post IDs, this function will retrieve the content and
+   * attachments for each post and send them to the destination site to be
+   * imported.
+   *
+   * @since 1.0
+   *
+   * @param array $selectedIds The IDs of the posts to be synced.
+   */
   private function syncSelectedContent($selectedIds) {
     $data = [];
     foreach ($selectedIds as $postId) {
       $post = get_post($postId);
+      $attachments = get_attached_media('image', $postId);
+      $attachment_data = [];
+
+      foreach ($attachments as $attachment) {
+        $attachment_data[] = [
+          'id' => $attachment->ID,
+          'url' => wp_get_attachment_url($attachment->ID),
+          'title' => $attachment->post_title,
+          'description' => $attachment->post_content,
+          'caption' => $attachment->post_excerpt,
+          'alt' => get_post_meta($attachment->ID, '_wp_attachment_image_alt', true),
+        ];
+      }
+
       $data[] = [
         'postType' => $post->post_type,
         'postTitle' => $post->post_title,
         'postContent' => $post->post_content,
         'postMeta' => get_post_meta($post->ID),
+        'attachments' => $attachment_data,
       ];
     }
 
@@ -135,6 +178,12 @@ class ContentSyncSource {
     }
   }
 
+  /**
+   * Show admin notices after a sync request.
+   *
+   * Shows a success notice if the sync was successful, or an error notice if
+   * there was an error.
+   */
   public function showNotices() {
     if ($this->syncSuccess) {
       ?>
