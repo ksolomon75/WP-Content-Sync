@@ -2,10 +2,10 @@
 /**
  * Plugin Name: Content Sync
  * Description: A plugin to sync content between WordPress installations using the WordPress REST API.
- * Version: 0.6
+ * Version: 0.7
  * Author: Keith Solomon
  * Author URI: https://keithsolomon.net
- * Plugin URI: https://github.com/ksolomon75/content-sync
+ * Plugin URI: https://github.com/ksolomon75/WP-Content-Sync
  * License: GPLv2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */

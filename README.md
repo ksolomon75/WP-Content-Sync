@@ -56,3 +56,7 @@ A plugin to sync content between WordPress installations using the WordPress RES
 ### Version 0.6
 
 - Added support for syncing custom post types
+
+### Version 0.7
+
+- Added support for syncing post metadata (categroies, tags, featured images, etc)
