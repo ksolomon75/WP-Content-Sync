@@ -272,17 +272,42 @@ class ContentSyncDestination {
    *
    * @return int|WP_Error The ID of the attachment on success, or a WP_Error object on failure.
    */
-  private function syncAttachment($attachment, $postId, $feat=false) {
+  private function syncAttachment($attachment, $postId, $feat = false) {
     $url = esc_url_raw($attachment['url']);
+    $fileName = basename($url); // Extract the file name
+    error_log('Attempting to sync attachment: ' . $fileName);
+
+    // Step 1: Search for existing media by file name
+    $existingAttachment = $this->getExistingMediaByFileName($fileName);
+
+    // If an existing attachment is found
+    if ($existingAttachment) {
+      error_log('Found existing attachment with ID: ' . $existingAttachment->ID);
+
+      // Step 2: If this is a featured image request, check if it's already set
+      if ($feat) {
+        $currentThumbnailId = get_post_thumbnail_id($postId);
+
+        if ($currentThumbnailId != $existingAttachment->ID) {
+          // Set the found attachment as the featured image
+          set_post_thumbnail($postId, $existingAttachment->ID);
+        }
+      }
+
+      // Return the existing attachment ID without downloading a new one
+      return $existingAttachment->ID;
+    }
+
+    // Step 3: Download and upload the media item if it doesn't exist
     error_log('Downloading attachment from URL: ' . $url);
 
     $file_array = [
-      'name' => basename($url),
+      'name' => $fileName,
       'tmp_name' => $this->downloadURL($url),
     ];
 
     if ($feat) {
-      $attMeta =[
+      $attMeta = [
         'post_title' => $attachment['title'],
       ];
     } else {
@@ -307,7 +332,45 @@ class ContentSyncDestination {
 
     update_post_meta($attachment_id, '_wp_attachment_image_alt', $attachment['alt']);
 
+    // Set as featured image if requested
+    if ($feat) {
+      set_post_thumbnail($postId, $attachment_id);
+    }
+
     return $attachment_id;
+  }
+
+  /**
+   * Search the media library for an attachment with the same file name.
+   *
+   * @param string $fileName The file name to search for.
+   *
+   * @return WP_Post|false The matching attachment post object if found, or false.
+   */
+  private function getExistingMediaByFileName($fileName) {
+    // Search the media library for an attachment with the same file name
+    $args = [
+      'post_type' => 'attachment',
+      'post_status' => 'inherit',
+      'meta_query' => [
+        [
+          'key' => '_wp_attached_file',
+          'value' => $fileName,
+          'compare' => 'LIKE', // Searches for the file name within the meta value
+        ],
+      ],
+      'posts_per_page' => 1, // We only need one result
+    ];
+
+    $existingAttachments = get_posts($args);
+
+    // If a matching attachment is found, return it
+    if ($existingAttachments) {
+      return $existingAttachments[0];
+    }
+
+    // No attachment found
+    return false;
   }
 
   /**
